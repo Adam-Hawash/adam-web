@@ -43,6 +43,7 @@ const DEFAULT_SETTINGS: Record<string, string> = {
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false)
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [pwError, setPwError] = useState('')
   const [showPw, setShowPw] = useState(false)
@@ -82,7 +83,7 @@ export default function AdminPage() {
       const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ email, password }),
       })
       if (res.ok) {
         setAuthed(true)
@@ -173,6 +174,10 @@ export default function AdminPage() {
                 <p className="text-sm text-muted-foreground">{t('brand')}</p>
               </div>
               <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <Label htmlFor="em">{t('admin.email')}</Label>
+                  <Input id="em" type="email" value={email} onChange={e => setEmail(e.target.value)} className="mt-1.5 bg-background gold-border" placeholder="admin@example.com" required />
+                </div>
                 <div>
                   <Label htmlFor="pw">{t('admin.password')}</Label>
                   <div className="relative mt-1.5">
