@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model SiteSetting {
+  key   String @id
+  value String @default("")
+}
+
+model Project {
+  id            String   @id @default(cuid())
+  title         String
+  titleAr       String   @default("")
+  description   String
+  descriptionAr String   @default("")
+  url           String
+  imageUrl      String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
