@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Phone, Mail, ExternalLink, Menu, X, Shield, Globe, Sun, Moon } from 'lucide-react'
+import { Phone, Mail, ExternalLink, Menu, X, Shield, Globe, Sun, Moon, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useTheme } from 'next-themes'
@@ -60,6 +60,7 @@ export default function Home() {
   const [settings, setSettings] = useState<SiteSettings>(FALLBACK)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [dataLoading, setDataLoading] = useState(true)
   const { lang, toggleLang, t, dir } = useLang()
   const { theme, setTheme } = useTheme()
 
@@ -72,13 +73,23 @@ export default function Home() {
 
   useEffect(() => {
     const controller = new AbortController()
+    setDataLoading(true)
+
+    // Wake up the database first
+    fetch('/api/settings', { signal: controller.signal })
+      .then(r => r.json())
+      .then(s => { setSettings(prev => ({ ...prev, ...s })) })
+      .catch(() => {})
+
+    // Then load everything
     Promise.all([
       fetch('/api/settings', { signal: controller.signal }).then(r => r.json()),
       fetch('/api/projects', { signal: controller.signal }).then(r => r.json()),
     ]).then(([s, p]) => {
       setSettings(prev => ({ ...prev, ...s }))
       setProjects(Array.isArray(p) ? p : [])
-    }).catch(() => {})
+    }).catch(() => {}).finally(() => setDataLoading(false))
+
     return () => controller.abort()
   }, [])
 
@@ -92,8 +103,6 @@ export default function Home() {
   const wa = settings.whatsapp_link || FALLBACK.whatsapp_link
   const em = settings.email_address || FALLBACK.email_address
   const img = settings.profile_image_url || FALLBACK.profile_image_url
-
-  const isLocalImage = img.startsWith('/')
 
   const toggleTheme = useCallback(() => {
     setTheme(theme === 'dark' ? 'light' : 'dark')
@@ -153,26 +162,15 @@ export default function Home() {
           <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }} className="mb-8 flex justify-center">
             <div className="relative">
               <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden gold-border gold-glow">
-                {isLocalImage ? (
-                  <Image
-                    src={img}
-                    alt="Adam Hawash"
-                    width={160}
-                    height={160}
-                    priority
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <Image
-                    src={img}
-                    alt="Adam Hawash"
-                    width={160}
-                    height={160}
-                    priority
-                    className="w-full h-full object-cover"
-                    unoptimized
-                  />
-                )}
+                <Image
+                  src={img}
+                  alt="Adam Hawash"
+                  width={160}
+                  height={160}
+                  priority
+                  className="w-full h-full object-cover"
+                  unoptimized={img.startsWith('http')}
+                />
               </div>
               <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-gold flex items-center justify-center">
                 <span className="text-background text-xs font-bold">AH</span>
@@ -213,40 +211,52 @@ export default function Home() {
             <p className="text-muted-foreground max-w-xl mx-auto">{sv('projects_subtitle_en', 'projects_subtitle_ar')}</p>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((p, i) => (
-              <motion.div key={p.id} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: i * 0.08 }}>
-                <Card className="project-card gold-border bg-surface overflow-hidden group h-full flex flex-col">
-                  {p.imageUrl ? (
-                    <div className="relative h-48 overflow-hidden">
-                      <Image
-                        src={p.imageUrl}
-                        alt={pTitle(p)}
-                        fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        loading="lazy"
-                        className="object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-surface to-transparent opacity-60" />
-                    </div>
-                  ) : (
-                    <div className="h-32 bg-gradient-to-br from-gold/10 to-transparent flex items-center justify-center">
-                      <span className="text-3xl font-bold gold-text-gradient">{pTitle(p).charAt(0)}</span>
-                    </div>
-                  )}
-                  <CardContent className="p-6 flex flex-col flex-1">
-                    <h3 className="text-lg font-semibold mb-2 text-foreground group-hover:text-gold transition-colors">{pTitle(p)}</h3>
-                    <p className="text-muted-foreground text-sm mb-4 flex-1 leading-relaxed">{pDesc(p)}</p>
-                    <a href={p.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm text-gold hover:text-gold-light transition-colors font-medium">
-                      {t('projects.viewProject')}<ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
+          {/* Loading State */}
+          {dataLoading && (
+            <div className="flex flex-col items-center justify-center py-16 gap-4">
+              <Loader2 className="w-8 h-8 animate-spin text-gold" />
+              <p className="text-muted-foreground text-sm">Loading projects...</p>
+            </div>
+          )}
 
-          {projects.length === 0 && <div className="text-center py-16 text-muted-foreground"><p className="text-lg">{t('projects.empty')}</p></div>}
+          {/* Projects Grid */}
+          {!dataLoading && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {projects.map((p, i) => (
+                <motion.div key={p.id} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: i * 0.08 }}>
+                  <Card className="project-card gold-border bg-surface overflow-hidden group h-full flex flex-col">
+                    {p.imageUrl ? (
+                      <div className="relative h-48 overflow-hidden">
+                        <Image
+                          src={p.imageUrl}
+                          alt={pTitle(p)}
+                          fill
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          loading="lazy"
+                          className="object-cover transition-transform duration-500 group-hover:scale-110"
+                          unoptimized
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-surface to-transparent opacity-60" />
+                      </div>
+                    ) : (
+                      <div className="h-32 bg-gradient-to-br from-gold/10 to-transparent flex items-center justify-center">
+                        <span className="text-3xl font-bold gold-text-gradient">{pTitle(p).charAt(0)}</span>
+                      </div>
+                    )}
+                    <CardContent className="p-6 flex flex-col flex-1">
+                      <h3 className="text-lg font-semibold mb-2 text-foreground group-hover:text-gold transition-colors">{pTitle(p)}</h3>
+                      <p className="text-muted-foreground text-sm mb-4 flex-1 leading-relaxed">{pDesc(p)}</p>
+                      <a href={p.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm text-gold hover:text-gold-light transition-colors font-medium">
+                        {t('projects.viewProject')}<ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          )}
+
+          {!dataLoading && projects.length === 0 && <div className="text-center py-16 text-muted-foreground"><p className="text-lg">{t('projects.empty')}</p></div>}
         </div>
       </section>
 
