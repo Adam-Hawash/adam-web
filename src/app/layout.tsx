@@ -16,9 +16,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Hero Developer | Adam Hawash",
-  description: "Hero Developer — Built & Managed by Adam Hawash.",
+  title: "Prime Developer | Adam Hawash",
+  description: "Prime Developer — Built & Managed by Adam Hawash.",
   icons: { icon: "/profile.png" },
+};
+
+export const viewport = {
+  themeColor: "#0a0a0a",
 };
 
 export default function RootLayout({
@@ -26,6 +30,12 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Preload the profile image so it shows up instantly when hero renders */}
+        <link rel="preload" as="image" href="/profile.png" fetchPriority="high" />
+        {/* DNS prefetch for any external resources */}
+        <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
           <LanguageProvider>

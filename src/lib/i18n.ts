@@ -2,7 +2,7 @@ export type Language = 'en' | 'ar'
 
 export const translations = {
   en: {
-    brand: 'Hero Developer',
+    brand: 'Prime Developer',
     brandSub: 'Built & Managed by Adam Hawash',
     nav: {
       projects: 'Projects',
@@ -67,7 +67,7 @@ export const translations = {
     },
   },
   ar: {
-    brand: 'Hero Developer',
+    brand: 'Prime Developer',
     brandSub: 'صمم وأدار بواسطة آدم حواش',
     nav: {
       projects: 'المشاريع',

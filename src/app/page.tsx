@@ -38,8 +38,8 @@ interface SiteSettings {
 }
 
 const FALLBACK: SiteSettings = {
-  brand_name_en: 'Hero Developer',
-  brand_name_ar: 'Hero Developer',
+  brand_name_en: 'Prime Developer',
+  brand_name_ar: 'Prime Developer',
   brand_sub_en: 'Built & Managed by Adam Hawash',
   brand_sub_ar: 'صمم وأدار بواسطة آدم حواش',
   hero_subtitle_en: 'Crafting digital experiences with precision and passion. Building solutions that make a difference.',
@@ -168,6 +168,7 @@ export default function Home() {
                   width={160}
                   height={160}
                   priority
+                  loading="eager"
                   className="w-full h-full object-cover"
                   unoptimized={img.startsWith('http')}
                 />

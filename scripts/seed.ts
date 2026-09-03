@@ -1,8 +1,8 @@
 import { db } from '../src/lib/db'
 
 const defaultSettings = [
-  { key: 'brand_name_en', value: 'Hero Developer' },
-  { key: 'brand_name_ar', value: 'Hero Developer' },
+  { key: 'brand_name_en', value: 'Prime Developer' },
+  { key: 'brand_name_ar', value: 'Prime Developer' },
   { key: 'brand_sub_en', value: 'Built & Managed by Adam Hawash' },
   { key: 'brand_sub_ar', value: 'صمم وأدار بواسطة آدم حواش' },
   { key: 'hero_subtitle_en', value: 'Crafting digital experiences with precision and passion. Building solutions that make a difference.' },
