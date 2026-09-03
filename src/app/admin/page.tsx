@@ -290,7 +290,7 @@ export default function AdminPage() {
                 <h3 className="text-base font-semibold text-foreground">{t('admin.profileImage')} & Contact</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div><Label>{t('admin.profileImage')}</Label><Input value={siteSettings.profile_image_url || ''} onChange={e => us('profile_image_url', e.target.value)} className="mt-1.5 bg-background gold-border" placeholder="/profile.png" /></div>
-                  <div className="flex items-end">{siteSettings.profile_image_url && <div className="w-16 h-16 rounded-full overflow-hidden gold-border relative"><Image src={siteSettings.profile_image_url} alt="Preview" fill sizes="64px" className="object-cover" unoptimized /></div>}</div>
+                  <div className="flex items-end">{siteSettings.profile_image_url && <div className="w-16 h-16 rounded-full overflow-hidden gold-border relative"><Image src={siteSettings.profile_image_url} alt="Preview" fill sizes="64px" className="object-cover" unoptimized={siteSettings.profile_image_url.startsWith('http')} /></div>}</div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div><Label>{t('admin.whatsappLink')}</Label><Input value={siteSettings.whatsapp_link || ''} onChange={e => us('whatsapp_link', e.target.value)} className="mt-1.5 bg-background gold-border" /></div>
@@ -352,7 +352,7 @@ export default function AdminPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {projects.map(p => (
                     <Card key={p.id} className="gold-border bg-surface overflow-hidden">
-                      {p.imageUrl && <div className="h-32 overflow-hidden relative"><Image src={p.imageUrl} alt={p.title} fill sizes="200px" loading="lazy" className="object-cover" /></div>}
+                      {p.imageUrl && <div className="h-32 overflow-hidden relative"><Image src={p.imageUrl} alt={p.title} fill sizes="200px" loading="eager" priority className="object-cover" unoptimized={p.imageUrl.startsWith('http')} /></div>}
                       <CardContent className="p-4">
                         <h3 className="font-semibold text-foreground mb-1">{p.title}</h3>
                         {p.titleAr && <p className="text-sm text-muted-foreground mb-1" dir="rtl">{p.titleAr}</p>}

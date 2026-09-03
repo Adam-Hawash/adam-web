@@ -233,9 +233,10 @@ export default function Home() {
                           alt={pTitle(p)}
                           fill
                           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                          loading="lazy"
+                          priority={i < 3}
+                          loading={i < 3 ? "eager" : "lazy"}
                           className="object-cover transition-transform duration-500 group-hover:scale-110"
-                          unoptimized
+                          unoptimized={p.imageUrl.startsWith('http')}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-surface to-transparent opacity-60" />
                       </div>
