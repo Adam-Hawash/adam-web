@@ -81,10 +81,6 @@ export default function Home() {
   const tapCountRef = useRef(0)
   const tapGapRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const tapArmRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // (فيدباك العدّ) نقاط خفيفة في زاوية الشاشة بتوضح عدد الضغطات الحالية —
-  // عشان المستر يعرف إن الضغطات بتتحسب (كانت العلة الأولانيه إن مفيش أي إشارة)
-  const [secretDots, setSecretDots] = useState(0)
-  const dotsResetRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { lang, toggleLang, t, dir } = useLang()
   const { theme, setTheme } = useTheme()
 
@@ -156,21 +152,11 @@ export default function Home() {
         clearTimeout(armRef.current)
         armRef.current = null
         countRef.current = 0
-        setSecretDots(0)
-        if (dotsResetRef.current) { clearTimeout(dotsResetRef.current); dotsResetRef.current = null }
         return
       }
       countRef.current += 1
       if (gapRef.current) clearTimeout(gapRef.current)
       gapRef.current = setTimeout(() => { countRef.current = 0 }, SECRET_GAP)
-      // فيدباك العدّ: النقاط تظهر مع كل ضغطة وتخفت بعد ثانية لو مفيش تكملة
-      setSecretDots(countRef.current)
-      if (dotsResetRef.current) clearTimeout(dotsResetRef.current)
-      if (countRef.current < SECRET_PRESS_COUNT) {
-        dotsResetRef.current = setTimeout(() => { setSecretDots(0) }, 1200)
-      } else {
-        dotsResetRef.current = null
-      }
       if (countRef.current >= SECRET_PRESS_COUNT) {
         countRef.current = 0
         if (gapRef.current) { clearTimeout(gapRef.current); gapRef.current = null }
@@ -216,7 +202,7 @@ export default function Home() {
   // تنظيف التايمرات لو المكوّن اتشال
   useEffect(() => {
     return () => {
-      ;[keyGapRef, keyArmRef, tapGapRef, tapArmRef, dotsResetRef].forEach((r) => {
+      ;[keyGapRef, keyArmRef, tapGapRef, tapArmRef].forEach((r) => {
         if (r.current) clearTimeout(r.current)
       })
     }
@@ -403,18 +389,6 @@ export default function Home() {
           </div>
         </div>
       </footer>
-
-      {/* فيدباك العدّ السري — نقاط خفيفة تظهر أثناء الضغط وتختفي لو اتقطع العد */}
-      {secretDots > 0 && !showLogin && !showAdmin && (
-        <div className="fixed bottom-5 end-5 z-[90] flex items-center gap-1.5 pointer-events-none select-none" aria-hidden="true">
-          {Array.from({ length: SECRET_PRESS_COUNT }).map((_, i) => (
-            <span
-              key={i}
-              className={'w-1.5 h-1.5 rounded-full transition-colors duration-200 ' + (i < secretDots ? 'bg-gold shadow-[0_0_6px_oklch(0.75_0.18_85/60%)]' : 'bg-gold/15')}
-            />
-          ))}
-        </div>
-      )}
 
       {/* لوحة دخول الأدمن السرية */}
       {showLogin && (
