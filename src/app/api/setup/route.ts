@@ -44,11 +44,25 @@ async function runSetup() {
     );
   `)
 
-  // Seed settings
+  // جدول الصور المرفوعة (رفع صور المشاريع والصورة الشخصية من لوحة الأدمن)
+  await db.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "Media" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "mime" TEXT NOT NULL DEFAULT 'image/png',
+      "size" INTEGER NOT NULL DEFAULT 0,
+      "chunks" INTEGER NOT NULL DEFAULT 1,
+      "received" INTEGER NOT NULL DEFAULT 0,
+      "data" TEXT NOT NULL DEFAULT '',
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL
+    );
+  `)
+
+  // Seed settings — يضيف المفاتيح الناقصة فقط بدون ما يكتب فوق إعدادات المستر الحقيقية
   for (const setting of defaultSettings) {
     await db.siteSetting.upsert({
       where: { key: setting.key },
-      update: { value: setting.value },
+      update: {},
       create: setting,
     })
   }

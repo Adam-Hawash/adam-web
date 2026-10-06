@@ -24,3 +24,15 @@ model Project {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
+
+// الصور المرفوعة من لوحة الأدمن (تُخزن base64 وتُقدم عبر /api/images/[id])
+model Media {
+  id        String   @id @default(cuid())
+  mime      String   @default("image/png")
+  size      Int      @default(0)
+  chunks    Int      @default(1)
+  received  Int      @default(0)
+  data      String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

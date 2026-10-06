@@ -1,13 +1,18 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
-import { Phone, Mail, ExternalLink, Menu, X, Shield, Globe, Sun, Moon, Loader2 } from 'lucide-react'
+import { Phone, Mail, ExternalLink, Menu, X, Globe, Sun, Moon, Loader2, Ruler, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { useTheme } from 'next-themes'
 import { useLang } from '@/lib/language-context'
+
+const AdminPanel = dynamic(() => import('@/components/admin-panel'))
 
 interface Project {
   id: string
@@ -61,6 +66,16 @@ export default function Home() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [dataLoading, setDataLoading] = useState(true)
+  // الدخول السري للوحة الأدمن
+  const [showLogin, setShowLogin] = useState(false)
+  const [showAdmin, setShowAdmin] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPw, setShowPw] = useState(false)
+  const [loginError, setLoginError] = useState('')
+  const [loginLoading, setLoginLoading] = useState(false)
+  const tapCountRef = useRef(0)
+  const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { lang, toggleLang, t, dir } = useLang()
   const { theme, setTheme } = useTheme()
 
@@ -108,6 +123,55 @@ export default function Home() {
     setTheme(theme === 'dark' ? 'light' : 'dark')
   }, [theme, setTheme])
 
+  // الطريقة السرية: 7 ضغطات على زرار المسطرة أو 7 تابات على الشاشة تفتح لوحة الدخول
+  const triggerSecret = useCallback(() => {
+    tapCountRef.current += 1
+    if (tapTimerRef.current) clearTimeout(tapTimerRef.current)
+    tapTimerRef.current = setTimeout(() => { tapCountRef.current = 0 }, 3500)
+    if (tapCountRef.current >= 7) {
+      tapCountRef.current = 0
+      if (tapTimerRef.current) { clearTimeout(tapTimerRef.current); tapTimerRef.current = null }
+      setLoginError('')
+      setShowLogin(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (showLogin || showAdmin) return
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null
+      if (target && target.closest('a, button, input, textarea, select, label, form, nav, [role="button"]')) return
+      triggerSecret()
+    }
+    document.addEventListener('click', handler)
+    return () => document.removeEventListener('click', handler)
+  }, [showLogin, showAdmin, triggerSecret])
+
+  const handleSecretLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoginLoading(true)
+    setLoginError('')
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      if (res.ok) {
+        setShowLogin(false)
+        setEmail('')
+        setPassword('')
+        setShowAdmin(true)
+      } else {
+        setLoginError(t('admin.wrongPassword'))
+      }
+    } catch {
+      setLoginError(t('admin.wrongPassword'))
+    } finally {
+      setLoginLoading(false)
+    }
+  }
+
   if (!mounted) { return <div className="min-h-screen bg-background" /> }
 
   return (
@@ -126,10 +190,6 @@ export default function Home() {
             <button onClick={toggleTheme} className="text-muted-foreground hover:text-gold transition-colors cursor-pointer p-1.5 rounded-md hover:bg-surface" aria-label="Toggle theme">
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
-            <a href="/admin" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-gold transition-colors">
-              <Shield className="w-3.5 h-3.5" />
-              {t('nav.admin')}
-            </a>
           </div>
           <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2 text-muted-foreground hover:text-foreground transition-colors" aria-label="Menu">
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -148,9 +208,6 @@ export default function Home() {
                 {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                 {theme === 'dark' ? (lang === 'ar' ? 'وضع نهاري' : 'Light Mode') : (lang === 'ar' ? 'وضع ليلي' : 'Dark Mode')}
               </button>
-              <a href="/admin" onClick={() => setMobileOpen(false)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-gold py-2">
-                <Shield className="w-3.5 h-3.5" />{t('nav.admin')}
-              </a>
             </div>
           </motion.div>
         )}
@@ -227,18 +284,15 @@ export default function Home() {
                 <motion.div key={p.id} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: i * 0.08 }}>
                   <Card className="project-card gold-border bg-surface overflow-hidden group h-full flex flex-col">
                     {p.imageUrl ? (
-                      <div className="relative h-48 overflow-hidden">
-                        <Image
+                      <div className="relative">
+                        {/* الصورة بمقاسها الحقيقي — بدون قص ولا تكبير */}
+                        <img
                           src={p.imageUrl}
                           alt={pTitle(p)}
-                          fill
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                          priority={i < 3}
-                          loading={i < 3 ? "eager" : "lazy"}
-                          className="object-cover transition-transform duration-500 group-hover:scale-110"
-                          unoptimized={p.imageUrl.startsWith('http')}
+                          loading={i < 3 ? 'eager' : 'lazy'}
+                          className="block w-full h-auto"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-surface to-transparent opacity-60" />
+                        <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-surface to-transparent opacity-40 pointer-events-none" />
                       </div>
                     ) : (
                       <div className="h-32 bg-gradient-to-br from-gold/10 to-transparent flex items-center justify-center">
@@ -270,10 +324,71 @@ export default function Home() {
             <div className="flex items-center gap-4">
               <a href={wa} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-gold transition-colors" aria-label="WhatsApp"><Phone className="w-4 h-4" /></a>
               <a href={`mailto:${em}`} className="text-muted-foreground hover:text-gold transition-colors" aria-label="Email"><Mail className="w-4 h-4" /></a>
+              {/* زرار المسطرة — 7 ضغطات عليه يفتح لوحة الدخول */}
+              <button onClick={triggerSecret} aria-hidden="true" tabIndex={-1} className="text-muted-foreground/50 hover:text-gold transition-colors p-1 cursor-pointer">
+                <Ruler className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>
       </footer>
+
+      {/* لوحة دخول الأدمن السرية */}
+      {showLogin && (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-sm px-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowLogin(false) }}
+        >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+            <Card className="gold-border bg-surface">
+              <CardContent className="p-8 relative">
+                <button
+                  onClick={() => setShowLogin(false)}
+                  className="absolute top-4 end-4 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+                <div className="text-center mb-6">
+                  <div className="w-14 h-14 rounded-full gold-border gold-glow mx-auto mb-4 overflow-hidden">
+                    <Image src="/profile.png" alt="Admin" width={56} height={56} priority className="w-full h-full object-cover" />
+                  </div>
+                  <h2 className="text-2xl font-bold gold-text-gradient mb-1">{t('admin.loginTitle')}</h2>
+                  <p className="text-sm text-muted-foreground">{t('brand')}</p>
+                </div>
+                <form onSubmit={handleSecretLogin} className="space-y-4">
+                  <div>
+                    <Label htmlFor="em">{t('admin.email')}</Label>
+                    <Input id="em" type="email" value={email} onChange={e => setEmail(e.target.value)} className="mt-1.5 bg-background gold-border" autoComplete="username" required />
+                  </div>
+                  <div>
+                    <Label htmlFor="pw">{t('admin.password')}</Label>
+                    <div className="relative mt-1.5">
+                      <Input id="pw" type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} className="bg-background gold-border pr-10" autoComplete="current-password" required />
+                      <button
+                        type="button"
+                        onClick={() => setShowPw(!showPw)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                        aria-label={showPw ? 'Hide password' : 'Show password'}
+                      >
+                        {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {loginError && <p className="text-destructive text-xs mt-1.5">{loginError}</p>}
+                  </div>
+                  <Button type="submit" disabled={loginLoading} className="w-full bg-gold hover:bg-gold-dark text-background font-semibold cursor-pointer">
+                    {loginLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    {t('admin.loginBtn')}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      )}
+
+      {/* لوحة الأدمن بعد نجاح الدخول */}
+      {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} />}
     </div>
   )
 }
