@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
-import { Phone, Mail, ExternalLink, Menu, X, Globe, Sun, Moon, Loader2, Ruler, Eye, EyeOff } from 'lucide-react'
+import { Phone, Mail, ExternalLink, Menu, X, Globe, Sun, Moon, Loader2, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -74,8 +74,13 @@ export default function Home() {
   const [showPw, setShowPw] = useState(false)
   const [loginError, setLoginError] = useState('')
   const [loginLoading, setLoginLoading] = useState(false)
+  // الدخول السري: عدّادين منفصلين — حرف A من الكيبورد، والتابات على الشاشة
+  const keyCountRef = useRef(0)
+  const keyGapRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const keyArmRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const tapCountRef = useRef(0)
-  const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const tapGapRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const tapArmRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { lang, toggleLang, t, dir } = useLang()
   const { theme, setTheme } = useTheme()
 
@@ -123,29 +128,80 @@ export default function Home() {
     setTheme(theme === 'dark' ? 'light' : 'dark')
   }, [theme, setTheme])
 
-  // الطريقة السرية: 7 ضغطات على زرار المسطرة أو 7 تابات على الشاشة تفتح لوحة الدخول
-  const triggerSecret = useCallback(() => {
-    tapCountRef.current += 1
-    if (tapTimerRef.current) clearTimeout(tapTimerRef.current)
-    tapTimerRef.current = setTimeout(() => { tapCountRef.current = 0 }, 3500)
-    if (tapCountRef.current >= 7) {
-      tapCountRef.current = 0
-      if (tapTimerRef.current) { clearTimeout(tapTimerRef.current); tapTimerRef.current = null }
-      setLoginError('')
-      setShowLogin(true)
-    }
+  // الطريقة السرية: 7 ضغطات (حرف A من الكيبورد أو 7 تابات على الشاشة)
+  // بعد السابعة بتستنى 5 ثواني — لو اتضغطت تانية جوه الخمس ثواني مش بتفتح،
+  // ولو عدّت الخمس ثواني من غير ضغطة تانية بتفتح لوحة الدخول
+  const SECRET_PRESS_COUNT = 7
+  const SECRET_ARM_DELAY = 5000
+  const SECRET_GAP = 3000 // أقصى فاصل بين الضغطات قبل ما العداد يتصفر
+
+  const openSecretLogin = useCallback(() => {
+    setLoginError('')
+    setShowLogin(true)
   }, [])
 
+  const registerSecretPress = useCallback(
+    (
+      countRef: { current: number },
+      gapRef: { current: ReturnType<typeof setTimeout> | null },
+      armRef: { current: ReturnType<typeof setTimeout> | null }
+    ) => {
+      // لو مستنين بعد السبعة — أي ضغطة تانية بتلغي كل حاجة
+      if (armRef.current) {
+        clearTimeout(armRef.current)
+        armRef.current = null
+        countRef.current = 0
+        return
+      }
+      countRef.current += 1
+      if (gapRef.current) clearTimeout(gapRef.current)
+      gapRef.current = setTimeout(() => { countRef.current = 0 }, SECRET_GAP)
+      if (countRef.current >= SECRET_PRESS_COUNT) {
+        countRef.current = 0
+        if (gapRef.current) { clearTimeout(gapRef.current); gapRef.current = null }
+        armRef.current = setTimeout(() => {
+          armRef.current = null
+          openSecretLogin()
+        }, SECRET_ARM_DELAY)
+      }
+    },
+    [openSecretLogin]
+  )
+
+  // الكيبورد: حرف A — مبيعدّش لو الكتابة جوه حقل أو مع Ctrl/Alt/Cmd
+  useEffect(() => {
+    if (showLogin || showAdmin) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== 'a' && e.key !== 'A') return
+      if (e.ctrlKey || e.altKey || e.metaKey) return
+      const target = e.target as HTMLElement | null
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) return
+      registerSecretPress(keyCountRef, keyGapRef, keyArmRef)
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [showLogin, showAdmin, registerSecretPress])
+
+  // الشاشة: تابات على أي مكان فاضي (للموبايل والماوس)
   useEffect(() => {
     if (showLogin || showAdmin) return
     const handler = (e: MouseEvent) => {
       const target = e.target as HTMLElement | null
       if (target && target.closest('a, button, input, textarea, select, label, form, nav, [role="button"]')) return
-      triggerSecret()
+      registerSecretPress(tapCountRef, tapGapRef, tapArmRef)
     }
     document.addEventListener('click', handler)
     return () => document.removeEventListener('click', handler)
-  }, [showLogin, showAdmin, triggerSecret])
+  }, [showLogin, showAdmin, registerSecretPress])
+
+  // تنظيف التايمرات لو المكوّن اتشال
+  useEffect(() => {
+    return () => {
+      ;[keyGapRef, keyArmRef, tapGapRef, tapArmRef].forEach((r) => {
+        if (r.current) clearTimeout(r.current)
+      })
+    }
+  }, [])
 
   const handleSecretLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -324,10 +380,6 @@ export default function Home() {
             <div className="flex items-center gap-4">
               <a href={wa} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-gold transition-colors" aria-label="WhatsApp"><Phone className="w-4 h-4" /></a>
               <a href={`mailto:${em}`} className="text-muted-foreground hover:text-gold transition-colors" aria-label="Email"><Mail className="w-4 h-4" /></a>
-              {/* زرار المسطرة — 7 ضغطات عليه يفتح لوحة الدخول */}
-              <button onClick={triggerSecret} aria-hidden="true" tabIndex={-1} className="text-muted-foreground/50 hover:text-gold transition-colors p-1 cursor-pointer">
-                <Ruler className="w-4 h-4" />
-              </button>
             </div>
           </div>
         </div>
