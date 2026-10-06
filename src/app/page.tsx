@@ -81,6 +81,10 @@ export default function Home() {
   const tapCountRef = useRef(0)
   const tapGapRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const tapArmRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // (فيدباك العدّ) نقاط خفيفة في زاوية الشاشة بتوضح عدد الضغطات الحالية —
+  // عشان المستر يعرف إن الضغطات بتتحسب (كانت العلة الأولانيه إن مفيش أي إشارة)
+  const [secretDots, setSecretDots] = useState(0)
+  const dotsResetRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { lang, toggleLang, t, dir } = useLang()
   const { theme, setTheme } = useTheme()
 
@@ -129,10 +133,11 @@ export default function Home() {
   }, [theme, setTheme])
 
   // الطريقة السرية: 7 ضغطات (حرف A من الكيبورد أو 7 تابات على الشاشة)
-  // بعد السابعة بتستنى 5 ثواني — لو اتضغطت تانية جوه الخمس ثواني مش بتفتح،
-  // ولو عدّت الخمس ثواني من غير ضغطة تانية بتفتح لوحة الدخول
+  // بعد السابعة بتستنى 3 ثواني — لو اتضغطت تانية جوه التلات ثواني مش بتفتح
+  // (العداد بيبدأ من الأول)، ولو عدّت التلات ثواني من غير ضغطة تانية
+  // بتفتح لوحة الدخول — نفس المنطق على اللابتوب والموبايل
   const SECRET_PRESS_COUNT = 7
-  const SECRET_ARM_DELAY = 5000
+  const SECRET_ARM_DELAY = 3000
   const SECRET_GAP = 3000 // أقصى فاصل بين الضغطات قبل ما العداد يتصفر
 
   const openSecretLogin = useCallback(() => {
@@ -151,11 +156,21 @@ export default function Home() {
         clearTimeout(armRef.current)
         armRef.current = null
         countRef.current = 0
+        setSecretDots(0)
+        if (dotsResetRef.current) { clearTimeout(dotsResetRef.current); dotsResetRef.current = null }
         return
       }
       countRef.current += 1
       if (gapRef.current) clearTimeout(gapRef.current)
       gapRef.current = setTimeout(() => { countRef.current = 0 }, SECRET_GAP)
+      // فيدباك العدّ: النقاط تظهر مع كل ضغطة وتخفت بعد ثانية لو مفيش تكملة
+      setSecretDots(countRef.current)
+      if (dotsResetRef.current) clearTimeout(dotsResetRef.current)
+      if (countRef.current < SECRET_PRESS_COUNT) {
+        dotsResetRef.current = setTimeout(() => { setSecretDots(0) }, 1200)
+      } else {
+        dotsResetRef.current = null
+      }
       if (countRef.current >= SECRET_PRESS_COUNT) {
         countRef.current = 0
         if (gapRef.current) { clearTimeout(gapRef.current); gapRef.current = null }
@@ -168,12 +183,16 @@ export default function Home() {
     [openSecretLogin]
   )
 
-  // الكيبورد: حرف A — مبيعدّش لو الكتابة جوه حقل أو مع Ctrl/Alt/Cmd
+  // الكيبورد: زرار A الفيزيائي — **بيتحدد بـ e.code مش e.key** عشان يشتغل
+  // مهما كانت لغة الكيبورد (على الكيبورد العربي زرار A بيطلع «ش» — دي كانت
+  // العلّة اللي كانت مخلياه ما يشتغلش). مبيعدّش لو الكتابة جوه حقل
+  // أو مع Ctrl/Alt/Cmd أو ضغط مطوّل (تكرار تلقائي)
   useEffect(() => {
     if (showLogin || showAdmin) return
     const handler = (e: KeyboardEvent) => {
-      if (e.key !== 'a' && e.key !== 'A') return
+      if (e.code !== 'KeyA') return
       if (e.ctrlKey || e.altKey || e.metaKey) return
+      if (e.repeat) return
       const target = e.target as HTMLElement | null
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) return
       registerSecretPress(keyCountRef, keyGapRef, keyArmRef)
@@ -197,7 +216,7 @@ export default function Home() {
   // تنظيف التايمرات لو المكوّن اتشال
   useEffect(() => {
     return () => {
-      ;[keyGapRef, keyArmRef, tapGapRef, tapArmRef].forEach((r) => {
+      ;[keyGapRef, keyArmRef, tapGapRef, tapArmRef, dotsResetRef].forEach((r) => {
         if (r.current) clearTimeout(r.current)
       })
     }
@@ -384,6 +403,18 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* فيدباك العدّ السري — نقاط خفيفة تظهر أثناء الضغط وتختفي لو اتقطع العد */}
+      {secretDots > 0 && !showLogin && !showAdmin && (
+        <div className="fixed bottom-5 end-5 z-[90] flex items-center gap-1.5 pointer-events-none select-none" aria-hidden="true">
+          {Array.from({ length: SECRET_PRESS_COUNT }).map((_, i) => (
+            <span
+              key={i}
+              className={'w-1.5 h-1.5 rounded-full transition-colors duration-200 ' + (i < secretDots ? 'bg-gold shadow-[0_0_6px_oklch(0.75_0.18_85/60%)]' : 'bg-gold/15')}
+            />
+          ))}
+        </div>
+      )}
 
       {/* لوحة دخول الأدمن السرية */}
       {showLogin && (
