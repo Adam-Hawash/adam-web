@@ -260,7 +260,7 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
   const uploadError = () => toast({ title: t('admin.uploadFailed') })
 
   return (
-    <div className="fixed inset-0 z-[100] bg-background overflow-y-auto" dir={dir}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="fixed inset-0 z-[100] bg-background overflow-y-auto" dir={dir}>
       <header className="sticky top-0 z-40 border-b border-border/50 bg-background/90 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <button onClick={onClose} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-gold transition-colors cursor-pointer">
@@ -416,8 +416,9 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                 <div className="text-center py-16 text-muted-foreground"><p className="text-lg">{t('admin.noProjects')}</p></div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {projects.map(p => (
-                    <Card key={p.id} className="gold-border bg-surface overflow-hidden">
+                  {projects.map((p, i) => (
+                    <motion.div key={p.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.35, delay: Math.min(i * 0.05, 0.4) }}>
+                    <Card className="project-card gold-border bg-surface overflow-hidden">
                       {p.imageUrl && (
                         <div className="bg-background/40 border-b border-border/50 p-2 flex justify-center">
                           <img src={p.imageUrl} alt={p.title} loading="lazy" className="max-w-full max-h-40 w-auto h-auto object-contain" />
@@ -433,6 +434,7 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                         </div>
                       </CardContent>
                     </Card>
+                    </motion.div>
                   ))}
                 </div>
               )}
@@ -440,6 +442,6 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
           )}
         </div>
       </main>
-    </div>
+    </motion.div>
   )
 }

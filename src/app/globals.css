@@ -177,3 +177,93 @@
   box-shadow: 0 0 40px oklch(0.75 0.18 85 / 12%);
   border-color: oklch(0.75 0.18 85 / 40%);
 }
+
+/* ================================================================
+   (تحريك الواجهة — بنفس الأسلوب ونفس درجات الذهبي بالحرف)
+   كل الحركات هنا transform/opacity/box-shadow بس — ألوان نفس oklch
+   ================================================================ */
+
+/* تعويم ناعم للصورة */
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.animate-float { animation: float-y 6s ease-in-out infinite; }
+
+/* دوران بطيء لحلقة اللمعة حول الصورة */
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+.animate-spin-slow { animation: spin-slow 18s linear infinite; }
+
+/* نبض الهالة الذهبية — نفس قيم gold-glow بس بتتنفس */
+@keyframes glow-breathe {
+  0%, 100% { box-shadow: 0 0 30px oklch(0.75 0.18 85 / 15%), 0 0 60px oklch(0.75 0.18 85 / 5%); }
+  50% { box-shadow: 0 0 45px oklch(0.75 0.18 85 / 28%), 0 0 90px oklch(0.75 0.18 85 / 12%); }
+}
+.glow-breathe { animation: glow-breathe 4s ease-in-out infinite; }
+
+/* لمعة عابرة على الاسم الذهبي — نفس التدرج + هايلايت أخف يعدي */
+@keyframes gold-shimmer {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+.shimmer-gold {
+  background: linear-gradient(120deg, oklch(0.82 0.16 85) 30%, oklch(0.92 0.08 85) 50%, oklch(0.82 0.16 85) 70%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gold-shimmer 5s linear infinite;
+}
+
+/* فقاعات ذهبية حية خلف الهيرو — شفافة جدًا وفوقها المحتوى */
+.hero-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(60px);
+  background: radial-gradient(circle, oklch(0.75 0.18 85 / 10%) 0%, transparent 70%);
+  animation: blob-drift 14s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes blob-drift {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(40px, -30px) scale(1.15); }
+  100% { transform: translate(-30px, 20px) scale(0.95); }
+}
+
+/* لمعة تمسح كرت المشروع عند الهوفر */
+.card-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, oklch(0.9 0.08 85 / 14%) 50%, transparent 60%);
+  background-size: 250% 100%;
+  background-position: 120% 0;
+  transition: background-position 0.9s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+.group:hover .card-shine { background-position: -120% 0; }
+
+/* خط ذهبي يتكوّن تحت لينكات الناف عند الهوفر */
+.nav-link { position: relative; }
+.nav-link::after {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  bottom: -4px;
+  height: 1.5px;
+  width: 100%;
+  background: oklch(0.75 0.18 85 / 60%);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.3s ease;
+}
+.nav-link:hover::after { transform: scaleX(1); }
+
+/* احترام إعدادات تقليل الحركة */
+@media (prefers-reduced-motion: reduce) {
+  .animate-float, .animate-spin-slow, .glow-breathe, .shimmer-gold, .hero-blob {
+    animation: none !important;
+  }
+  .card-shine, .nav-link::after { transition: none !important; }
+}

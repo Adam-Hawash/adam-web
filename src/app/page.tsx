@@ -238,12 +238,12 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Nav */}
-      <nav className="fixed top-0 inset-x-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border/50">
+      <motion.nav initial={{ y: -64, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5, ease: 'easeOut' }} className="fixed top-0 inset-x-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border/50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <a href="#" className="gold-text-gradient text-xl font-bold tracking-tight">{sv('brand_name_en', 'brand_name_ar')}</a>
           <div className="hidden md:flex items-center gap-5">
-            <a href="#projects" className="text-sm text-muted-foreground hover:text-foreground transition-colors">{t('nav.projects')}</a>
-            <a href="#contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">{t('nav.contact')}</a>
+            <a href="#projects" className="nav-link text-sm text-muted-foreground hover:text-foreground transition-colors">{t('nav.projects')}</a>
+            <a href="#contact" className="nav-link text-sm text-muted-foreground hover:text-foreground transition-colors">{t('nav.contact')}</a>
             <button onClick={toggleLang} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-gold transition-colors cursor-pointer px-2 py-1 rounded-md hover:bg-surface">
               <Globe className="w-3.5 h-3.5" />
               {lang === 'en' ? 'العربية' : 'English'}
@@ -258,7 +258,7 @@ export default function Home() {
         </div>
 
         {mobileOpen && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-xl">
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-xl">
             <div className="px-4 py-4 flex flex-col gap-3">
               <a href="#projects" onClick={() => setMobileOpen(false)} className="text-sm text-muted-foreground hover:text-foreground py-2">{t('nav.projects')}</a>
               <a href="#contact" onClick={() => setMobileOpen(false)} className="text-sm text-muted-foreground hover:text-foreground py-2">{t('nav.contact')}</a>
@@ -272,14 +272,18 @@ export default function Home() {
             </div>
           </motion.div>
         )}
-      </nav>
+      </motion.nav>
 
       {/* Hero */}
-      <section className="hero-bg pt-32 pb-20 px-4 sm:px-6">
-        <div className="max-w-4xl mx-auto text-center">
+      <section className="hero-bg pt-32 pb-20 px-4 sm:px-6 relative overflow-hidden">
+        {/* فقاعات ذهبية حية — نفس درجة الذهبي وشكلها بيتنفس */}
+        <div aria-hidden="true" className="hero-blob w-[420px] h-[420px] -top-24 start-[8%]" />
+        <div aria-hidden="true" className="hero-blob w-[320px] h-[320px] top-44 end-[6%]" style={{ animationDelay: '-7s' }} />
+        <div className="max-w-4xl mx-auto text-center relative z-10">
           <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }} className="mb-8 flex justify-center">
-            <div className="relative">
-              <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden gold-border gold-glow">
+            <div className="relative animate-float">
+              <div aria-hidden="true" className="absolute -inset-3 rounded-full animate-spin-slow opacity-40" style={{ background: 'conic-gradient(from 0deg, oklch(0.75 0.18 85 / 45%), transparent 30%, oklch(0.75 0.18 85 / 45%) 60%, transparent 85%)', filter: 'blur(6px)' }} />
+              <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden gold-border glow-breathe">
                 <Image
                   src={img}
                   alt="Adam Hawash"
@@ -299,28 +303,28 @@ export default function Home() {
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-3">
-              <span className="gold-text-gradient">{sv('brand_name_en', 'brand_name_ar')}</span>
+              <span className="shimmer-gold">{sv('brand_name_en', 'brand_name_ar')}</span>
             </h1>
             <p className="text-base sm:text-lg text-gold/70 font-medium mb-4">{sv('brand_sub_en', 'brand_sub_ar')}</p>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">{sv('hero_subtitle_en', 'hero_subtitle_ar')}</p>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }} id="contact" className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a href={wa} target="_blank" rel="noopener noreferrer">
+            <motion.a href={wa} target="_blank" rel="noopener noreferrer" whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.96 }} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
               <Button size="lg" className="gap-2 bg-gold hover:bg-gold-dark text-background font-semibold px-8 py-6 text-base cursor-pointer transition-all hover:shadow-[0_0_30px_oklch(0.75_0.18_85/30%)]">
                 <Phone className="w-5 h-5" />{t('hero.whatsapp')}
               </Button>
-            </a>
-            <a href={`mailto:${em}`}>
+            </motion.a>
+            <motion.a href={`mailto:${em}`} whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.96 }} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
               <Button size="lg" variant="outline" className="gap-2 gold-border text-foreground hover:bg-surface hover:text-gold font-semibold px-8 py-6 text-base cursor-pointer transition-all">
                 <Mail className="w-5 h-5" />{t('hero.email')}
               </Button>
-            </a>
+            </motion.a>
           </motion.div>
         </div>
       </section>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6"><div className="h-px bg-gradient-to-r from-transparent via-gold/20 to-transparent" /></div>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6"><motion.div initial={{ scaleX: 0 }} whileInView={{ scaleX: 1 }} viewport={{ once: true }} transition={{ duration: 0.9, ease: 'easeOut' }} className="h-px bg-gradient-to-r from-transparent via-gold/20 to-transparent" /></div>
 
       {/* Projects */}
       <section id="projects" className="py-20 px-4 sm:px-6">
@@ -334,7 +338,7 @@ export default function Home() {
           {dataLoading && (
             <div className="flex flex-col items-center justify-center py-16 gap-4">
               <Loader2 className="w-8 h-8 animate-spin text-gold" />
-              <p className="text-muted-foreground text-sm">Loading projects...</p>
+              <p className="text-muted-foreground text-sm animate-pulse">Loading projects...</p>
             </div>
           )}
 
@@ -343,7 +347,7 @@ export default function Home() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {projects.map((p, i) => (
                 <motion.div key={p.id} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: i * 0.08 }}>
-                  <Card className="project-card gold-border bg-surface overflow-hidden group h-full flex flex-col">
+                  <Card className="project-card gold-border bg-surface overflow-hidden group h-full flex flex-col relative">
                     {p.imageUrl ? (
                       <div className="relative">
                         {/* الصورة بمقاسها الحقيقي — بدون قص ولا تكبير */}
@@ -367,6 +371,7 @@ export default function Home() {
                         {t('projects.viewProject')}<ExternalLink className="w-3.5 h-3.5" />
                       </a>
                     </CardContent>
+                    <div aria-hidden="true" className="card-shine" />
                   </Card>
                 </motion.div>
               ))}
@@ -378,7 +383,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-border/50">
+      <motion.footer initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.8 }} className="mt-auto border-t border-border/50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">{sv('footer_en', 'footer_ar')}</p>
@@ -388,7 +393,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </footer>
+      </motion.footer>
 
       {/* لوحة دخول الأدمن السرية */}
       {showLogin && (
@@ -396,7 +401,7 @@ export default function Home() {
           className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-sm px-4"
           onClick={(e) => { if (e.target === e.currentTarget) setShowLogin(false) }}
         >
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+          <motion.div initial={{ opacity: 0, y: 24, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 22 }} className="w-full max-w-md">
             <Card className="gold-border bg-surface">
               <CardContent className="p-8 relative">
                 <button
@@ -407,7 +412,7 @@ export default function Home() {
                   <X className="w-5 h-5" />
                 </button>
                 <div className="text-center mb-6">
-                  <div className="w-14 h-14 rounded-full gold-border gold-glow mx-auto mb-4 overflow-hidden">
+                  <div className="w-14 h-14 rounded-full gold-border glow-breathe mx-auto mb-4 overflow-hidden">
                     <Image src="/profile.png" alt="Admin" width={56} height={56} priority className="w-full h-full object-cover" />
                   </div>
                   <h2 className="text-2xl font-bold gold-text-gradient mb-1">{t('admin.loginTitle')}</h2>
